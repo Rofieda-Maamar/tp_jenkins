@@ -8,7 +8,13 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                bat './gradlew build'
+                bat '''
+                    ./gradlew  build ^
+                    -Pmaven.password=%password% ^
+                    -Pmaven.url=%url% ^
+                    -Pmaven.username=%username% ^
+                    --no-daemon
+                '''
             }
         }
     }

@@ -6,15 +6,19 @@ plugins {
 group = 'com.test'
 version = '1.0-SNAPSHOT'
 
+def mavenPassword = project.findProperty('maven.password') ?: System.getenv('password') ?: ''
+def mavenUrl = project.findProperty('maven.url') ?: System.getenv('url') ?: ''
+def mavenUsername = project.findProperty('maven.username') ?: System.getenv('username') ?: ''
+
 // Configuration du repository Maven pour lire la librairie déployée
 repositories {
     mavenCentral()
 
     maven {
-        url 'https://mymavenrepo.com/repo/q6XpD3S4BEtjOO54lQZx/'
+        url mavenUrl
         credentials {
-            username 'myMavenRepo'
-            password 'test0007'
+            username = mavenUsername
+            password = mavenPassword
         }
     }
 }
