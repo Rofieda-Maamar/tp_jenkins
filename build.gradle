@@ -1,13 +1,13 @@
 plugins {
     id 'java'
     id 'application'
-    id 'maven-publish'        // <-- needed for `publish`
+    id 'maven-publish'
 }
 
 group = 'com.example'
 version = '1.0-SNAPSHOT'
 
-// read from -P properties first, then environment variables (supports different names)
+// ===== Maven credentials / repo =====
 def mavenUrl = project.findProperty('maven.url') ?: System.getenv('maven.url') ?: System.getenv('MAVEN_URL') ?: System.getenv('url') ?: ''
 def mavenUsername = project.findProperty('maven.username') ?: System.getenv('maven.username') ?: System.getenv('MAVEN_USERNAME') ?: System.getenv('username') ?: ''
 def mavenPassword = project.findProperty('maven.password') ?: System.getenv('maven.password') ?: System.getenv('MAVEN_PASSWORD') ?: System.getenv('password') ?: ''
@@ -28,17 +28,52 @@ repositories {
     }
 }
 
-
-
 application {
     mainClass = 'com.example.Main'
 }
 
-test {
-    useJUnit()
+// ===== Dependencies =====
+dependencies {
+    // JUnit
+    testImplementation 'junit:junit:4.13.2'
+
+    // Cucumber
+    testImplementation 'io.cucumber:cucumber-java:7.31.0'
+    testImplementation 'io.cucumber:cucumber-junit:7.31.0'
 }
 
-// Configure publishing (adjust coordinates/artifact as needed)
+// ===== Test Phase =====
+test {
+    useJUnit() // JUnit 4
+
+    reports {
+        junitXml.required.set(true)  // XML results for CI/CD
+        html.required.set(true)      // HTML report for human-readable view
+    }
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        showStandardStreams = true
+    }
+}
+
+// Optional separate Cucumber task
+task cucumber(type: Test) {
+    useJUnit()
+    include '**/RunCucumberTest.class' // adjust if your runner is in a different package
+
+    reports {
+        junitXml.required.set(true)
+        html.required.set(true)
+    }
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        showStandardStreams = true
+    }
+}
+
+// ===== Maven Publishing =====
 publishing {
     publications {
         mavenJava(MavenPublication) {
