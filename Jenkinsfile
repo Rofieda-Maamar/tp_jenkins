@@ -1,20 +1,28 @@
 pipeline {
     agent any
 
-    tools {
-            jdk 'JDK-21'  // Make sure this JDK is configured in Jenkins
-        }
+    tools { jdk 'JDK-21' }
 
     stages {
         stage('Build') {
             steps {
-                bat '''
-                    ./gradlew  build ^
-                    -Pmaven.password=%password% ^
+                bat """
+                    .\\gradlew.bat clean build --no-daemon ^
                     -Pmaven.url=%url% ^
                     -Pmaven.username=%username% ^
-                    --no-daemon
-                '''
+                    -Pmaven.password=%password%
+                """
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                bat """
+                    .\\gradlew.bat publish --no-daemon ^
+                    -Pmaven.url=%url% ^
+                    -Pmaven.username=%username% ^
+                    -Pmaven.password=%password%
+                """
             }
         }
     }

@@ -1,35 +1,34 @@
 plugins {
     id 'java'
     id 'application'
+    id 'maven-publish'        // <-- needed for `publish`
 }
 
-group = 'com.test'
+group = 'com.example'
 version = '1.0-SNAPSHOT'
 
-def mavenPassword = project.findProperty('maven.password') ?: System.getenv('password') ?: ''
-def mavenUrl = project.findProperty('maven.url') ?: System.getenv('url') ?: ''
-def mavenUsername = project.findProperty('maven.username') ?: System.getenv('username') ?: ''
+// read from -P properties first, then environment variables (supports different names)
+def mavenUrl = project.findProperty('maven.url') ?: System.getenv('maven.url') ?: System.getenv('MAVEN_URL') ?: System.getenv('url') ?: ''
+def mavenUsername = project.findProperty('maven.username') ?: System.getenv('maven.username') ?: System.getenv('MAVEN_USERNAME') ?: System.getenv('username') ?: ''
+def mavenPassword = project.findProperty('maven.password') ?: System.getenv('maven.password') ?: System.getenv('MAVEN_PASSWORD') ?: System.getenv('password') ?: ''
 
-// Configuration du repository Maven pour lire la librairie déployée
 repositories {
     mavenCentral()
 
-    maven {
-        url mavenUrl
-        credentials {
-            username = mavenUsername
-            password = mavenPassword
+    if (mavenUrl) {
+        maven {
+            url = uri(mavenUrl)
+            if (mavenUsername || mavenPassword) {
+                credentials {
+                    username = mavenUsername
+                    password = mavenPassword
+                }
+            }
         }
     }
 }
 
-dependencies {
-    // Syntaxe: implementation "groupId:artifactId:version"
-    implementation 'com.example:tp5_ogl_1:1.0-SNAPSHOT'
 
-    // Pour les tests
-    testImplementation 'junit:junit:4.13.2'
-}
 
 application {
     mainClass = 'com.example.Main'
@@ -37,4 +36,27 @@ application {
 
 test {
     useJUnit()
+}
+
+// Configure publishing (adjust coordinates/artifact as needed)
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            groupId = project.group
+            artifactId = project.name
+            version = project.version
+        }
+    }
+    repositories {
+        if (mavenUrl) {
+            maven {
+                url = uri(mavenUrl)
+                credentials {
+                    username = mavenUsername
+                    password = mavenPassword
+                }
+            }
+        }
+    }
 }
