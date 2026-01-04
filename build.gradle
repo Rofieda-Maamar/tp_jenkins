@@ -1,0 +1,36 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.test'
+version = '1.0-SNAPSHOT'
+
+// Configuration du repository Maven pour lire la librairie déployée
+repositories {
+    mavenCentral()
+
+    maven {
+        url 'https://mymavenrepo.com/repo/q6XpD3S4BEtjOO54lQZx/'
+        credentials {
+            username 'myMavenRepo'
+            password 'test0007'
+        }
+    }
+}
+
+dependencies {
+    // Syntaxe: implementation "groupId:artifactId:version"
+    implementation 'com.example:tp5_ogl_1:1.0-SNAPSHOT'
+
+    // Pour les tests
+    testImplementation 'junit:junit:4.13.2'
+}
+
+application {
+    mainClass = 'com.example.Main'
+}
+
+test {
+    useJUnit()
+}
