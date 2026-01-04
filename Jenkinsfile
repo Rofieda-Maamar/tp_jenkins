@@ -31,7 +31,7 @@ pipeline {
                 echo 'Running Unit Tests and Cucumber Tests'
 
                 // Run unit tests and Cucumber tests
-                sh './gradlew clean test cucumber'
+                bat './gradlew clean test cucumber'
 
                 // Archive JUnit XML results (unit tests)
                 junit '**/build/test-results/**/*.xml'
