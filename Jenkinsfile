@@ -17,23 +17,13 @@ pipeline {
         // =========================
         stage('Test') {
             steps {
-                echo 'Running unit tests and Cucumber tests'
+                echo 'Running unit tests'
                 bat './gradlew clean test'
             }
             post {
                 always {
-                    // 1. Archivage des tests unitaires
+                    // Archivage des résultats des tests unitaires
                     junit 'build/test-results/test/*.xml'
-
-                    // 2. Archivage des rapports Cucumber
-                    publishHTML([
-                        allowMissing: true,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'build/reports/cucumber',
-                        reportFiles: 'index.html',
-                        reportName: 'Cucumber Report'
-                    ])
                 }
             }
         }
@@ -47,9 +37,7 @@ pipeline {
                     bat """
                         ./gradlew sonar ^
                         -Dsonar.projectKey=projet_main ^
-                        -Dsonar.projectName=projet_main ^
-                        -Dsonar.host.url=%SONAR_HOST_URL% ^
-                        -Dsonar.login=%SONAR_AUTH_TOKEN%
+                        -Dsonar.projectName=projet_main
                     """
                 }
             }
@@ -112,12 +100,10 @@ pipeline {
     post {
 
         success {
-            // Email
             mail to: 'dev-team@example.com',
                  subject: "SUCCESS: Pipeline ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                  body: "Deployment successful.\nBuild URL: ${env.BUILD_URL}"
 
-            // Slack
             slackSend(
                 webhookUrl: credentials('slack-webhook'),
                 message: "✅ Pipeline *${env.JOB_NAME}* #${env.BUILD_NUMBER} deployed successfully!"
@@ -125,12 +111,10 @@ pipeline {
         }
 
         failure {
-            // Email
             mail to: 'dev-team@example.com',
                  subject: "FAILED: Pipeline ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                  body: "Pipeline failed.\nCheck logs: ${env.BUILD_URL}"
 
-            // Slack
             slackSend(
                 webhookUrl: credentials('slack-webhook'),
                 message: "❌ Pipeline *${env.JOB_NAME}* #${env.BUILD_NUMBER} FAILED!"
