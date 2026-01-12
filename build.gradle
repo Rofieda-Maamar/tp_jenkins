@@ -32,7 +32,6 @@ application {
     mainClass = 'com.example.Main'
 }
 
-// ===== Dependencies =====
 dependencies {
     // JUnit
     testImplementation 'junit:junit:4.13.2'
@@ -45,33 +44,9 @@ dependencies {
 // ===== Test Phase =====
 test {
     useJUnit() // JUnit 4
-
-    reports {
-        junitXml.required.set(true)  // XML results for CI/CD
-        html.required.set(true)      // HTML report for human-readable view
-    }
-
-    testLogging {
-        events "passed", "skipped", "failed"
-        showStandardStreams = true
-    }
 }
 
-// Optional separate Cucumber task
-task cucumber(type: Test) {
-    useJUnit()
-    include '**/RunCucumberTest.class' // adjust if your runner is in a different package
 
-    reports {
-        junitXml.required.set(true)
-        html.required.set(true)
-    }
-
-    testLogging {
-        events "passed", "skipped", "failed"
-        showStandardStreams = true
-    }
-}
 
 // ===== Maven Publishing =====
 publishing {

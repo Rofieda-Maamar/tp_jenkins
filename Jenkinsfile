@@ -31,30 +31,9 @@ pipeline {
                 echo 'Running Unit Tests and Cucumber Tests'
 
                 // Run unit tests and Cucumber tests
-                bat './gradlew clean test cucumber'
+                bat './gradlew clean test '
 
-                // Archive JUnit XML results (unit tests)
-                junit '**/build/test-results/**/*.xml'
 
-                // Publish HTML reports for unit tests
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'build/reports/tests/test',
-                    reportFiles: 'index.html',
-                    reportName: 'Unit Test Report'
-                ])
-
-                // Publish HTML reports for Cucumber
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'build/reports/tests/cucumber',
-                    reportFiles: 'index.html',
-                    reportName: 'Cucumber Report'
-                ])
             }
         }
 
