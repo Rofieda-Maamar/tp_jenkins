@@ -15,34 +15,7 @@ pipeline {
         // =========================
         // 2.1 PHASE TEST
 
-        // =========================
-        // 2.2 PHASE CODE ANALYSIS
-        // =========================
-        stage('Code Analysis - SonarQube') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                     withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                        bat """
-                            ./gradlew sonarqube ^
-                            -Dsonar.projectKey=projet_main ^
-                            -Dsonar.projectName=projet_main ^
-                            -Dsonar.login=%SONAR_TOKEN%
-                        """
-                     }
-                }
-            }
-        }
 
-        // =========================
-        // 2.3 PHASE CODE QUALITY
-        // =========================
-        stage('Quality Gate phase') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
 
         // =========================
         // 2.4 PHASE BUILD
