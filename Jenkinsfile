@@ -23,7 +23,7 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                      withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                         bat """
-                            ./gradlew sonar ^
+                            ./gradlew sonarqube ^
                             -Dsonar.projectKey=projet_main ^
                             -Dsonar.projectName=projet_main ^
                             -Dsonar.login=%SONAR_TOKEN%
@@ -36,7 +36,7 @@ pipeline {
         // =========================
         // 2.3 PHASE CODE QUALITY
         // =========================
-        stage('Quality Gate') {
+        stage('Quality Gate phase') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
