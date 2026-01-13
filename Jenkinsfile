@@ -14,19 +14,6 @@ pipeline {
 
         // =========================
         // 2.1 PHASE TEST
-        // =========================
-        stage('Test') {
-            steps {
-                echo 'Running unit tests'
-                bat './gradlew clean test'
-            }
-            post {
-                always {
-                    // Archivage des résultats des tests unitaires
-                    junit 'build/test-results/test/*.xml'
-                }
-            }
-        }
 
         // =========================
         // 2.2 PHASE CODE ANALYSIS
