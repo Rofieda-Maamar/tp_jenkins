@@ -21,11 +21,14 @@ pipeline {
         stage('Code Analysis - SonarQube') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    bat """
-                        ./gradlew sonarqube ^
-                        -Dsonar.projectKey=projet_main ^
-                        -Dsonar.projectName=projet_main
-                    """
+                     withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                        bat """
+                            ./gradlew sonar ^
+                            -Dsonar.projectKey=projet_main ^
+                            -Dsonar.projectName=projet_main ^
+                            -Dsonar.login=%SONAR_TOKEN%
+                        """
+                     }
                 }
             }
         }
