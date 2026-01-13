@@ -22,7 +22,7 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQube') {
                     bat """
-                        ./gradlew sonar ^
+                        ./gradlew sonarqube ^
                         -Dsonar.projectKey=projet_main ^
                         -Dsonar.projectName=projet_main
                     """
