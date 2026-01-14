@@ -132,131 +132,40 @@ pipeline {
         // ============================================
         // PHASE 6: NOTIFICATION (Success)
         // ============================================
-        stage('Notification') {
-            steps {
-                echo '========== Phase Notification =========='
+       stage('Notification') {
+           steps {
+               echo '========== Sending Slack Notification =========='
+               // Use the Slack token securely
+               withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'SLACK_TOKEN')]) {
+                   script {
+                       // Determine the color and message based on build result
+                       def slackColor = 'good' // default green
+                       def slackMessage = "SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' succeeded!\n${env.BUILD_URL}"
 
-                // Notification par Email
-                script {
-                    emailext (
-                        to: 'mr_maamar@esi.dz',
-                        replyTo: 'mr_asbar@esi.dz',
-                        subject: "Deploiement reussi - ${PROJECT_NAME} v${PROJECT_VERSION}",
-                        body: """
-                        <html>
-                        <body>
-                            <h2 style="color: green;">Deploiement reussi</h2>
-                            <p>Bonjour,</p>
-                            <p>Le deploiement de la librairie a ete effectue avec succes par <strong>ASBAR ROUFAIDA</strong>.</p>
+                       if (currentBuild.currentResult == 'FAILURE') {
+                           slackColor = 'danger'
+                           slackMessage = "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' failed!\n${env.BUILD_URL}"
+                       } else if (currentBuild.currentResult == 'UNSTABLE') {
+                           slackColor = 'warning'
+                           slackMessage = "UNSTABLE: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' is unstable.\n${env.BUILD_URL}"
+                       }
 
-                            <h3>Details du deploiement:</h3>
-                            <ul>
-                                <li><strong>Projet:</strong> ${PROJECT_NAME}</li>
-                                <li><strong>Version:</strong> ${PROJECT_VERSION}</li>
-                                <li><strong>Build:</strong> #${env.BUILD_NUMBER}</li>
-                                <li><strong>Date:</strong> ${new Date().format('dd/MM/yyyy HH:mm:ss')}</li>
-                                <li><strong>Branch:</strong> ${env.BRANCH_NAME}</li>
-                            </ul>
+                       // Send the Slack message
+                       slackSend(
+                           channel: '#tous-ogl',        // replace with your channel
+                           color: slackColor,
+                           token: env.SLACK_TOKEN,
+                           message: slackMessage
+                       )
+                   }
+               }
+           }
+       }
 
-                            <h3>Quality Gate SonarQube:</h3>
-                            <p><a href="http://localhost:9000/dashboard?id=TP7-API-INTEGRATION">Voir l'analyse SonarQube</a></p>
-
-                            <h3>Repository Maven:</h3>
-                            <p><a href="${MAVEN_URL}">${MAVEN_URL}</a></p>
-
-                            <h3>Utilisation:</h3>
-                            <pre>implementation "asbar-roufaida:${PROJECT_NAME}:${PROJECT_VERSION}"</pre>
-
-                            <h3>Liens utiles:</h3>
-                            <ul>
-                                <li><a href="${env.BUILD_URL}">Console Output</a></li>
-                                <li><a href="${env.BUILD_URL}cucumber-html-reports/overview-features.html">Rapport Cucumber</a></li>
-                                <li><a href="${env.BUILD_URL}Javadoc/">Documentation Javadoc</a></li>
-                            </ul>
-
-                            <p>Cordialement,<br/>Jenkins CI/CD</p>
-                        </body>
-                        </html>
-                        """,
-                        mimeType: 'text/html'
-                    )
-                }
-                echo 'Email de notification envoye'
-
-
-                // Notification Slack
-               slackSend(
-                   channel: '#nouveau-canal',
-                   color: 'good',
-                   message: """
-                       *Deploiement reussi*
-                       *Projet* : ${PROJECT_NAME}
-                       *Version* : ${PROJECT_VERSION}
-                       *Build* : #${env.BUILD_NUMBER}
-                       *Branch* : ${env.BRANCH_NAME}
-                   """,
-                   tokenCredentialId: 'slack-webhook1'
-               )
-
-
-                echo 'Slack de notification envoye'
-            }
-        }
-    }
 
     // ============================================
     // POST ACTIONS (Gestion des échecs)
     // ============================================
-    post {
-        failure {
-            echo '========== Build Failed =========='
-
-            emailext (
-                to: 'mr_maamar@esi.dz',
-                replyTo: 'mr_maamar@esi.dz',
-                subject: "Echec du build - ${PROJECT_NAME} #${env.BUILD_NUMBER}",
-                body: """
-                <html>
-                <body>
-                    <h2 style="color: red;">Echec du build</h2>
-                    <p>Bonjour,</p>
-                    <p>Le pipeline Jenkins a echoue.</p>
-
-                    <h3>Details:</h3>
-                    <ul>
-                        <li><strong>Projet:</strong> ${PROJECT_NAME}</li>
-                        <li><strong>Build:</strong> #${env.BUILD_NUMBER}</li>
-                        <li><strong>Branch:</strong> ${env.BRANCH_NAME}</li>
-                        <li><strong>Date:</strong> ${new Date().format('dd/MM/yyyy HH:mm:ss')}</li>
-                    </ul>
-
-                    <p><a href="${env.BUILD_URL}console">Voir les logs complets</a></p>
-
-                    <p>Cordialement,<br/>Jenkins CI/CD</p>
-                </body>
-                </html>
-                """,
-                mimeType: 'text/html'
-            )
-
-            slackSend (
-               // baseUrl: 'https://hooks.slack.com/services/',
-                tokenCredentialId: 'slack-webhook1', // Force l'utilisation de votre secret
-
-                channel: '#nouveau-canal',
-                color: 'danger',
-                message: """
-            *Build échoué*
-            *Projet* : ${PROJECT_NAME}
-            *Build* : #${env.BUILD_NUMBER}
-            *Branch* : ${env.BRANCH_NAME}
-             Logs : ${env.BUILD_URL}console
-            """
-            )
-
-
-            echo 'Email et slack d\'echec envoye'
-        }
 
         success {
             echo '========== Build Successful =========='
