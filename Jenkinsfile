@@ -46,9 +46,11 @@ pipeline {
                 echo '========== Phase Code Analysis =========='
                 echo 'Analyse du code avec SonarQube...'
 
-                withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_AUTH_TOKEN')]) {
-                            bat "gradlew compileJava sonar -Dsonar.login=%SONAR_AUTH_TOKEN%"
-                        }
+                withSonarQubeEnv('SonarQube') { // "SonarQube" is the name of the Sonar server in Jenkins
+                    withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_AUTH_TOKEN')]) {
+                        bat "gradlew compileJava sonar -Dsonar.login=%SONAR_AUTH_TOKEN%"
+                    }
+                }
             }
         }
 
