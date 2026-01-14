@@ -1,14 +1,13 @@
 pipeline {
     agent any
     tools {
-            jdk 'JDK-21'
+        jdk 'JDK-21'
     }
 
     environment {
         MAVEN_URL = 'https://mymavenrepo.com/repo/cEmjfkxugPlzLxXg1A2B/'
-        PROJECT_NAME = 'TP7-API-INTEGRATION'      // ou le nom exact de ton projet Gradle
-            PROJECT_VERSION = '1.0-SNAPSHOT'
-
+        PROJECT_NAME = 'TP7-API-INTEGRATION' // ou le nom exact de ton projet Gradle
+        PROJECT_VERSION = '1.0-SNAPSHOT'
     }
 
     stages {
@@ -19,21 +18,18 @@ pipeline {
             steps {
                 echo '========== Phase Test =========='
 
-                // Étape 1.1: Lancement des tests unitaires
                 echo 'Execution des tests unitaires...'
                 bat 'gradlew clean test'
 
-                // Étape 1.2: Archivage des résultats des tests
                 echo 'Archivage des resultats de tests...'
                 junit '**/build/test-results/test/*.xml'
 
-                // Étape 1.3: Génération des rapports Cucumber
                 echo 'Generation des rapports Cucumber...'
                 bat 'gradlew generateCucumberReports'
                 cucumber buildStatus: 'UNSTABLE',
-                    reportTitle: 'Rapport Cucumber',
-                    fileIncludePattern: '**/*.json',
-                    jsonReportDirectory: 'reports'
+                         reportTitle: 'Rapport Cucumber',
+                         fileIncludePattern: '**/*.json',
+                         jsonReportDirectory: 'reports'
             }
         }
 
@@ -56,21 +52,21 @@ pipeline {
         // ============================================
         // PHASE 3: CODE QUALITY (Quality Gate)
         // ============================================
-        /*stage('Code Quality') {
+        stage('Code Quality') {
             steps {
                 echo '========== Phase Code Quality =========='
                 echo 'Verification du Quality Gate...'
 
-               timeout(time: 10, unit: 'MINUTES') {
-                           script {
-                               def qg = waitForQualityGate()
-                               if (qg.status != 'OK') {
-                                   error "Pipeline aborted due to quality gate failure: ${qg.status}"
-                               }
-                           }
-                       }
+                timeout(time: 10, unit: 'MINUTES') {
+                    script {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                        }
+                    }
+                }
             }
-        }*/
+        }
 
         // ============================================
         // PHASE 4: BUILD
@@ -79,23 +75,20 @@ pipeline {
             steps {
                 echo '========== Phase Build =========='
 
-                // Étape 4.1: Génération du fichier JAR
                 echo 'Generation du fichier JAR...'
                 bat 'gradlew build -x test'
 
-                // Étape 4.2: Génération de la documentation
                 echo 'Generation de la Javadoc...'
                 bat 'gradlew generateJavadoc'
 
-                // Étape 4.3: Archivage du JAR et de la documentation
                 echo 'Archivage des artefacts...'
                 archiveArtifacts artifacts: '**/build/libs/*.jar',
-                    fingerprint: true,
-                    allowEmptyArchive: false
+                                 fingerprint: true,
+                                 allowEmptyArchive: false
 
                 archiveArtifacts artifacts: '**/build/docs/javadoc/**/*',
-                    fingerprint: true,
-                    allowEmptyArchive: true
+                                 fingerprint: true,
+                                 allowEmptyArchive: true
 
                 publishHTML([
                     allowMissing: false,
@@ -113,67 +106,58 @@ pipeline {
         // PHASE 5: DEPLOY (MyMavenRepo)
         // ============================================
         stage('Deploy') {
-          steps {
-            echo '========== Phase Deploy =========='
-            withCredentials([usernamePassword(credentialsId: 'maven-repo', usernameVariable: 'MAVEN_USERNAME', passwordVariable: 'MAVEN_PASSWORD')]) {
-              // Passe l'URL et les creds comme propriétés Gradle pour être sûrs que build.gradle les lise
-              bat """
-                gradlew publish ^
-                  -Pmaven.url=%MAVEN_URL% ^
-                  -Pmaven.username=%MAVEN_USERNAME% ^
-                  -Pmaven.password=%MAVEN_PASSWORD%
-              """
+            steps {
+                echo '========== Phase Deploy =========='
+                withCredentials([usernamePassword(credentialsId: 'maven-repo', usernameVariable: 'MAVEN_USERNAME', passwordVariable: 'MAVEN_PASSWORD')]) {
+                    bat """
+                        gradlew publish ^
+                          -Pmaven.url=%MAVEN_URL% ^
+                          -Pmaven.username=%MAVEN_USERNAME% ^
+                          -Pmaven.password=%MAVEN_PASSWORD%
+                    """
+                }
+                echo "Deploiement reussi sur ${env.MAVEN_URL}"
             }
-            echo "Deploiement reussi sur ${env.MAVEN_URL}"
-          }
         }
 
-
         // ============================================
-        // PHASE 6: NOTIFICATION (Success)
+        // PHASE 6: NOTIFICATION (Slack)
         // ============================================
-       stage('Notification') {
-           steps {
-               echo '========== Sending Slack Notification =========='
-               // Use the Slack token securely
-               withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'SLACK_TOKEN')]) {
-                   script {
-                       // Determine the color and message based on build result
-                       def slackColor = 'good' // default green
-                       def slackMessage = "SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' succeeded!\n${env.BUILD_URL}"
+        stage('Notification') {
+            steps {
+                echo '========== Sending Slack Notification =========='
+                withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'SLACK_TOKEN')]) {
+                    script {
+                        def slackColor = 'good'
+                        def slackMessage = "SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' succeeded!\n${env.BUILD_URL}"
 
-                       if (currentBuild.currentResult == 'FAILURE') {
-                           slackColor = 'danger'
-                           slackMessage = "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' failed!\n${env.BUILD_URL}"
-                       } else if (currentBuild.currentResult == 'UNSTABLE') {
-                           slackColor = 'warning'
-                           slackMessage = "UNSTABLE: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' is unstable.\n${env.BUILD_URL}"
-                       }
+                        if (currentBuild.currentResult == 'FAILURE') {
+                            slackColor = 'danger'
+                            slackMessage = "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' failed!\n${env.BUILD_URL}"
+                        } else if (currentBuild.currentResult == 'UNSTABLE') {
+                            slackColor = 'warning'
+                            slackMessage = "UNSTABLE: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' is unstable.\n${env.BUILD_URL}"
+                        }
 
-                       // Send the Slack message
-                       slackSend(
-                           channel: '#tous-ogl',        // replace with your channel
-                           color: slackColor,
-                           token: env.SLACK_TOKEN,
-                           message: slackMessage
-                       )
-                   }
-               }
-           }
-       }
+                        slackSend(
+                            channel: '#tous-ogl',
+                            color: slackColor,
+                            token: env.SLACK_TOKEN,
+                            message: slackMessage
+                        )
+                    }
+                }
+            }
+        }
+    }
 
-
-    // ============================================
-    // POST ACTIONS (Gestion des échecs)
-    // ============================================
-
+    post {
         success {
             echo '========== Build Successful =========='
         }
 
         always {
             echo '========== Pipeline termine =========='
-            // Only clean if the build was successful to allow debugging on failure
             script {
                 if (currentBuild.result == 'SUCCESS') {
                     cleanWs(
