@@ -6,7 +6,7 @@ pipeline {
 
     environment {
         MAVEN_URL = 'https://mymavenrepo.com/repo/cEmjfkxugPlzLxXg1A2B/'
-        PROJECT_NAME = 'TP7-API-INTEGRATION' // ou le nom exact de ton projet Gradle
+        PROJECT_NAME = 'TP7-API-INTEGRATION'
         PROJECT_VERSION = '1.0-SNAPSHOT'
     }
 
@@ -41,7 +41,7 @@ pipeline {
                 echo '========== Phase Code Analysis =========='
                 echo 'Analyse du code avec SonarQube...'
 
-                withSonarQubeEnv('SonarQube') { // "SonarQube" is the name of the Sonar server in Jenkins
+                withSonarQubeEnv('SonarQube') {
                     withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_AUTH_TOKEN')]) {
                         bat "gradlew compileJava sonar -Dsonar.login=%SONAR_AUTH_TOKEN%"
                     }
@@ -119,76 +119,43 @@ pipeline {
                 echo "Deploiement reussi sur ${env.MAVEN_URL}"
             }
         }
+    }
 
-        // ============================================
-        // PHASE 6: NOTIFICATION (Slack)
-        // ============================================
-        // ============================================
-        // PHASE 6: NOTIFICATION (Slack)
-        // ============================================
-        stage('Notification') {
-            steps {
-                echo '========== Phase Notification =========='
-                script {
-                    def buildStatus = currentBuild.result ?: 'SUCCESS'
-                    def color = buildStatus == 'SUCCESS' ? 'good' : 'danger'
-                    def emoji = buildStatus == 'SUCCESS' ? '✅' : '❌'
-                    def statusText = buildStatus == 'SUCCESS' ? 'réussi' : 'échoué'
+    // ============================================
+    // POST-BUILD ACTIONS
+    // ============================================
+    post {
+        success {
+            echo '========== Build Success - Sending Slack Notification =========='
+            script {
+                def message = ":white_check_mark: *Build réussi*\\n*Projet:* ${env.PROJECT_NAME}\\n*Version:* ${env.PROJECT_VERSION}\\n*Build:* #${env.BUILD_NUMBER}\\n*Job:* ${env.JOB_NAME}\\n*URL:* ${env.BUILD_URL}"
 
-                    def payload = """
-                    {
-                        "channel": "#tous-ogl",
-                        "username": "Jenkins",
-                        "text": "${emoji} Build ${statusText}",
-                        "attachments": [
-                            {
-                                "color": "${color}",
-                                "fields": [
-                                    {
-                                        "title": "Projet",
-                                        "value": "${env.PROJECT_NAME}",
-                                        "short": true
-                                    },
-                                    {
-                                        "title": "Version",
-                                        "value": "${env.PROJECT_VERSION}",
-                                        "short": true
-                                    },
-                                    {
-                                        "title": "Build",
-                                        "value": "#${env.BUILD_NUMBER}",
-                                        "short": true
-                                    },
-                                    {
-                                        "title": "Status",
-                                        "value": "${buildStatus}",
-                                        "short": true
-                                    },
-                                    {
-                                        "title": "Job",
-                                        "value": "${env.JOB_NAME}",
-                                        "short": false
-                                    },
-                                    {
-                                        "title": "URL",
-                                        "value": "${env.BUILD_URL}",
-                                        "short": false
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                    """
-
-                    withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'WEBHOOK_URL')]) {
-                        bat """
-                            curl -X POST -H "Content-type: application/json" --data "${payload.replaceAll('\n', '').replaceAll('"', '\\"')}" %WEBHOOK_URL%
-                        """
-                    }
+                withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'WEBHOOK_URL')]) {
+                    bat "curl -X POST -H \"Content-type: application/json\" --data \"{\\\"text\\\":\\\"${message}\\\"}\" %WEBHOOK_URL%"
                 }
             }
         }
 
+        failure {
+            echo '========== Build Failed - Sending Slack Notification =========='
+            script {
+                def message = ":x: *Build échoué*\\n*Projet:* ${env.PROJECT_NAME}\\n*Version:* ${env.PROJECT_VERSION}\\n*Build:* #${env.BUILD_NUMBER}\\n*Job:* ${env.JOB_NAME}\\n*URL:* ${env.BUILD_URL}"
 
-}
+                withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'WEBHOOK_URL')]) {
+                    bat "curl -X POST -H \"Content-type: application/json\" --data \"{\\\"text\\\":\\\"${message}\\\"}\" %WEBHOOK_URL%"
+                }
+            }
+        }
+
+        unstable {
+            echo '========== Build Unstable - Sending Slack Notification =========='
+            script {
+                def message = ":warning: *Build instable*\\n*Projet:* ${env.PROJECT_NAME}\\n*Version:* ${env.PROJECT_VERSION}\\n*Build:* #${env.BUILD_NUMBER}\\n*Job:* ${env.JOB_NAME}\\n*URL:* ${env.BUILD_URL}"
+
+                withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'WEBHOOK_URL')]) {
+                    bat "curl -X POST -H \"Content-type: application/json\" --data \"{\\\"text\\\":\\\"${message}\\\"}\" %WEBHOOK_URL%"
+                }
+            }
+        }
+    }
 }
