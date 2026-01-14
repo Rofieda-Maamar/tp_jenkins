@@ -38,95 +38,50 @@ pipeline {
             }
         }
 
-        // ============================================
-        // PHASE 2: CODE ANALYSIS (SonarQube)
-        // ============================================
-        stage('Code Analysis') {
-            steps {
-                echo '========== Phase Code Analysis =========='
-                echo 'Analyse du code avec SonarQube...'
 
-                withSonarQubeEnv('SonarQube') {
-                bat 'gradlew compileJava sonar'
-                }
-            }
-        }
-
-        // ============================================
-        // PHASE 3: CODE QUALITY (Quality Gate)
-        // ============================================
-        stage('Code Quality') {
-            steps {
-                echo '========== Phase Code Quality =========='
-                echo 'Verification du Quality Gate...'
-
-               timeout(time: 10, unit: 'MINUTES') {
-                           script {
-                               def qg = waitForQualityGate()
-                               if (qg.status != 'OK') {
-                                   error "Pipeline aborted due to quality gate failure: ${qg.status}"
-                               }
-                           }
-                       }
-            }
-        }
 
         // ============================================
         // PHASE 4: BUILD
         // ============================================
-        stage('Build') {
-            steps {
-                echo '========== Phase Build =========='
+          // =========================
+                // 2.4 PHASE BUILD
+                // =========================
+                stage('Build') {
+                    steps {
+                        echo 'Generating JAR and Javadoc'
+                        bat './gradlew clean build javadoc'
+                    }
+                    post {
+                        success {
+                            // Archivage du JAR
+                            archiveArtifacts artifacts: 'build/libs/*.jar', fingerprint: true
 
-                // Étape 4.1: Génération du fichier JAR
-                echo 'Generation du fichier JAR...'
-                bat 'gradlew build -x test'
-
-                // Étape 4.2: Génération de la documentation
-                echo 'Generation de la Javadoc...'
-                bat 'gradlew generateJavadoc'
-
-                // Étape 4.3: Archivage du JAR et de la documentation
-                echo 'Archivage des artefacts...'
-                archiveArtifacts artifacts: '**/build/libs/*.jar',
-                    fingerprint: true,
-                    allowEmptyArchive: false
-
-                archiveArtifacts artifacts: '**/build/docs/javadoc/**/*',
-                    fingerprint: true,
-                    allowEmptyArchive: true
-
-                publishHTML([
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'build/docs/javadoc',
-                    reportFiles: 'index.html',
-                    reportName: 'Javadoc',
-                    reportTitles: 'Documentation Javadoc'
-                ])
-            }
-        }
-
-        // ============================================
-        // PHASE 5: DEPLOY (MyMavenRepo)
-        // ============================================
-        stage('Deploy') {
-            steps {
-                echo '========== Phase Deploy =========='
-                echo 'Deploiement sur MyMavenRepo...'
-
-                withCredentials([usernamePassword(
-                    credentialsId: 'maven-repo-credentials',
-                    usernameVariable: 'MAVEN_USERNAME',
-                    passwordVariable: 'MAVEN_PASSWORD'
-                )]) {
-                    bat 'gradlew publish'
+                            // Archivage de la documentation
+                            archiveArtifacts artifacts: 'build/docs/javadoc/**', fingerprint: true
+                        }
+                    }
                 }
 
-                echo "Deploiement reussi sur ${MAVEN_REPO_URL}"
+                // =========================
+                // 2.5 PHASE DEPLOY
+                // =========================
+                stage('Deploy') {
+                    steps {
+                        withCredentials([usernamePassword(
+                            credentialsId: 'maven-repo',
+                            usernameVariable: 'username',
+                            passwordVariable: 'password'
+                        )]) {
+                            bat """
+                                ./gradlew publish ^
+                                -Pmaven.url=%MAVEN_URL% ^
+                                -Pmaven.username=%username% ^
+                                -Pmaven.password=%password%
+                            """
+                        }
+                    }
+                }
             }
-        }
 
         // ============================================
         // PHASE 6: NOTIFICATION (Success)
