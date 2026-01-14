@@ -73,22 +73,27 @@ tasks.named('sonar') {
 }
 
 publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            groupId = project.group
+            artifactId = project.name
+            version = project.version
+        }
+    }
     repositories {
-        maven {
-            url System.getenv('MAVEN_REPO_URL') ?: 'https://mymavenrepo.com/repo/cEmjfkxugPlzLxXg1A2B/'
-            credentials {
-                username System.getenv('username') ?: 'myMavenRepo'
-                password System.getenv('password') ?: 'test0005'
+        if (mavenUrl) {
+            maven {
+                url = uri(mavenUrl)
+                credentials {
+                    username = mavenUsername
+                    password = mavenPassword
+                }
             }
         }
     }
-
-    publications {
-        maven(MavenPublication) {
-            from components.java
-        }
-    }
 }
+
 
 // Tâche pour générer la Javadoc
 task generateJavadoc(type: Javadoc) {
