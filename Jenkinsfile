@@ -185,10 +185,8 @@ pipeline {
 
 
                 // Notification Slack
-               slackSend (
-                   baseUrl: 'https://hooks.slack.com/services/',
-                   tokenCredentialId: 'slack-webhook', // Force l'utilisation de votre secret
-                   channel: '#tous-ogl',
+               slackSend(
+                   channel: '#nouveau-canal',
                    color: 'good',
                    message: """
                        *Deploiement reussi*
@@ -196,9 +194,10 @@ pipeline {
                        *Version* : ${PROJECT_VERSION}
                        *Build* : #${env.BUILD_NUMBER}
                        *Branch* : ${env.BRANCH_NAME}
-                       Lien : ${env.BUILD_URL}
-                   """
+                   """,
+                   tokenCredentialId: 'slack-webhook1'
                )
+
 
                 echo 'Slack de notification envoye'
             }
@@ -241,10 +240,10 @@ pipeline {
             )
 
             slackSend (
-                baseUrl: 'https://hooks.slack.com/services/',
-                tokenCredentialId: 'slack-webhook', // Force l'utilisation de votre secret
+               // baseUrl: 'https://hooks.slack.com/services/',
+                tokenCredentialId: 'slack-webhook1', // Force l'utilisation de votre secret
 
-                channel: '#tous-ogl',
+                channel: '#nouveau-canal',
                 color: 'danger',
                 message: """
             *Build échoué*
