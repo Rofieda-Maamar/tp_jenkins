@@ -150,23 +150,5 @@ pipeline {
         }
 
 
-
-    post {
-        success {
-            echo '========== Build Successful =========='
-        }
-
-        always {
-            echo '========== Pipeline termine =========='
-            script {
-                if (currentBuild.result == 'SUCCESS') {
-                    cleanWs(
-                        deleteDirs: true,
-                        patterns: [[pattern: 'build/**', type: 'INCLUDE']]
-                    )
-                }
-            }
-        }
-    }
 }
 }
