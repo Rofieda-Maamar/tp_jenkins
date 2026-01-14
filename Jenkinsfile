@@ -188,7 +188,7 @@ pipeline {
                slackSend (
                    baseUrl: 'https://hooks.slack.com/services/',
                    tokenCredentialId: 'slack-webhook', // Force l'utilisation de votre secret
-                   channel: '#jenkins',
+                   channel: '#tous-ogl',
                    color: 'good',
                    message: """
                        *Deploiement reussi*
@@ -244,7 +244,7 @@ pipeline {
                 baseUrl: 'https://hooks.slack.com/services/',
                 tokenCredentialId: 'slack-webhook', // Force l'utilisation de votre secret
 
-                channel: '#jenkins',
+                channel: '#tous-ogl',
                 color: 'danger',
                 message: """
             *Build échoué*
