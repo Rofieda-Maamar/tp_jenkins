@@ -3,6 +3,7 @@ plugins {
     id 'application'
     id 'maven-publish'
     id "org.sonarqube" version "4.3.0.3225" // latest compatible version
+    id 'jacoco'
 }
 
 group = 'com.example'
@@ -42,12 +43,44 @@ dependencies {
     testImplementation 'io.cucumber:cucumber-junit:7.31.0'
 }
 
-// ===== Test Phase =====
+// ===== Test Configuration =====
 test {
     useJUnit() // JUnit 4
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+
+    // Generate test reports in multiple formats
+    reports {
+        html.required = true
+        junitXml.required = true
+    }
+}
+jacoco {
+    toolVersion = "0.8.8"
 }
 
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+// ===== Cucumber Configuration =====
+task cucumber(type: Test) {
+    useJUnit()
+    systemProperty "cucumber.filter.tags", System.getProperty("cucumber.filter.tags")
 
+    // Add source directories for Cucumber
+    include '**/*Cucumber*.*', '**/*Test.*'
+    exclude '**/*MainTest.*'
+
+    reports {
+        html.required = true
+        junitXml.required = true
+    }
+}
 
 // ===== Maven Publishing =====
 publishing {
