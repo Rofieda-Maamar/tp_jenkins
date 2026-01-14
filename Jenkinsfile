@@ -162,7 +162,7 @@ pipeline {
                             <p><a href="http://localhost:9000/dashboard?id=TP7-API-INTEGRATION">Voir l'analyse SonarQube</a></p>
 
                             <h3>Repository Maven:</h3>
-                            <p><a href="${MAVEN_REPO_URL}">${MAVEN_REPO_URL}</a></p>
+                            <p><a href="${MAVEN_URL}">${MAVEN_URL}</a></p>
 
                             <h3>Utilisation:</h3>
                             <pre>implementation "asbar-roufaida:${PROJECT_NAME}:${PROJECT_VERSION}"</pre>
