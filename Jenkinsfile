@@ -129,15 +129,58 @@ pipeline {
                 script {
                     def buildStatus = currentBuild.result ?: 'SUCCESS'
                     def emoji = buildStatus == 'SUCCESS' ? ':white_check_mark:' : ':x:'
-                    def statusText = buildStatus == 'SUCCESS' ? 'réussi' : 'échoué'
+                    def statusText = buildStatus == 'SUCCESS' ? 'reussi' : 'echoue'
 
-                    def message = "${emoji} *Build ${statusText}*\\n*Projet:* ${env.PROJECT_NAME}\\n*Version:* ${env.PROJECT_VERSION}\\n*Build:* #${env.BUILD_NUMBER}\\n*Job:* ${env.JOB_NAME}\\n*URL:* ${env.BUILD_URL}"
+                    def payload = """
+                    {
+                        "text": "${emoji} *Build ${statusText}*",
+                        "blocks": [
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": "${emoji} *Build ${statusText}*"
+                                }
+                            },
+                            {
+                                "type": "section",
+                                "fields": [
+                                    {
+                                        "type": "mrkdwn",
+                                        "text": "*Projet:*\\n${env.PROJECT_NAME}"
+                                    },
+                                    {
+                                        "type": "mrkdwn",
+                                        "text": "*Version:*\\n${env.PROJECT_VERSION}"
+                                    },
+                                    {
+                                        "type": "mrkdwn",
+                                        "text": "*Build:*\\n#${env.BUILD_NUMBER}"
+                                    },
+                                    {
+                                        "type": "mrkdwn",
+                                        "text": "*Status:*\\n${buildStatus}"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": "*Job:* ${env.JOB_NAME}\\n*URL:* <${env.BUILD_URL}|Voir le build>"
+                                }
+                            }
+                        ]
+                    }
+                    """.replaceAll("\\s+", " ").trim()
 
                     withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'WEBHOOK_URL')]) {
-                        bat "curl -X POST -H \"Content-type: application/json\" --data \"{\\\"text\\\":\\\"${message}\\\"}\" %WEBHOOK_URL%"
+                        bat """
+                            curl -X POST -H "Content-type: application/json" --data "${payload}" %WEBHOOK_URL%
+                        """
                     }
                 }
-                echo 'Notification Slack envoyée avec succès'
+                echo 'Notification Slack envoyee avec succes'
             }
         }
     }
