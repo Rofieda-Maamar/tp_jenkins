@@ -214,7 +214,7 @@ pipeline {
 
             emailext (
                 to: 'asbarroufaida@gmail.com',
-                replyTo: 'mr_asbar@esi.dz',
+                replyTo: 'mr_maamar@esi.dz',
                 subject: "Echec du build - ${PROJECT_NAME} #${env.BUILD_NUMBER}",
                 body: """
                 <html>
