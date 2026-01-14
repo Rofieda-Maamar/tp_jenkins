@@ -128,16 +128,25 @@ pipeline {
                 echo '========== Phase Notification =========='
                 script {
                     def buildStatus = currentBuild.result ?: 'SUCCESS'
+                    def color = buildStatus == 'SUCCESS' ? 'good' : 'danger'
                     def emoji = buildStatus == 'SUCCESS' ? ':white_check_mark:' : ':x:'
-                    def statusText = buildStatus == 'SUCCESS' ? 'réussi' : 'échoué'
+                    def statusText = buildStatus == 'SUCCESS' ? 'reussi' : 'echoue'
 
-                    def message = "${emoji} *Build ${statusText}*\\n*Projet:* ${env.PROJECT_NAME}\\n*Version:* ${env.PROJECT_VERSION}\\n*Build:* #${env.BUILD_NUMBER}\\n*Job:* ${env.JOB_NAME}\\n*URL:* ${env.BUILD_URL}"
-
-                    withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'WEBHOOK_URL')]) {
-                        bat "curl -X POST -H \"Content-type: application/json\" --data \"{\\\"text\\\":\\\"${message}\\\"}\" %WEBHOOK_URL%"
-                    }
+                    slackSend(
+                        color: color,
+                        channel: '#tous-ogl',
+                        message: """
+                        ${emoji} *Build ${statusText}*
+                        *Projet:* ${env.PROJECT_NAME}
+                        *Version:* ${env.PROJECT_VERSION}
+                        *Build:* #${env.BUILD_NUMBER}
+                        *Status:* ${buildStatus}
+                        *Job:* ${env.JOB_NAME}
+                        *URL:* ${env.BUILD_URL} """.trim(),
+                        tokenCredentialId: 'SLACK_AUTH_TOKEN'
+                    )
                 }
-                echo 'Notification Slack envoyée avec succès'
+                echo 'Notification Slack envoyee avec succes'
             }
         }
     }
