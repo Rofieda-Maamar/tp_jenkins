@@ -52,7 +52,7 @@ pipeline {
         // ============================================
         // PHASE 3: CODE QUALITY (Quality Gate)
         // ============================================
-        /*stage('Code Quality') {
+        stage('Code Quality') {
             steps {
                 echo '========== Phase Code Quality =========='
                 echo 'Verification du Quality Gate...'
@@ -66,7 +66,7 @@ pipeline {
                     }
                 }
             }
-        }*/
+        }
 
         // ============================================
         // PHASE 4: BUILD
