@@ -213,7 +213,7 @@ pipeline {
             echo '========== Build Failed =========='
 
             emailext (
-                to: 'asbarroufaida@gmail.com',
+                to: 'mr_maamar@esi.dz',
                 replyTo: 'mr_maamar@esi.dz',
                 subject: "Echec du build - ${PROJECT_NAME} #${env.BUILD_NUMBER}",
                 body: """
