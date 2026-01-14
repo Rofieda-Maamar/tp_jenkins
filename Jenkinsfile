@@ -123,28 +123,35 @@ pipeline {
         // ============================================
         // PHASE 6: NOTIFICATION (Slack)
         // ============================================
+        // ============================================
+        // PHASE 6: NOTIFICATION (Slack)
+        // ============================================
         stage('Notification') {
             steps {
-                echo '========== Sending Slack Notification =========='
+                echo '========== Phase Notification =========='
                 script {
-                    def slackColor = 'good'
-                    def slackMessage = "SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' succeeded!\n${env.BUILD_URL}"
+                    def buildStatus = currentBuild.result ?: 'SUCCESS'
+                    def color = buildStatus == 'SUCCESS' ? 'good' : 'danger'
+                    def message = buildStatus == 'SUCCESS' ?
+                        "✅ Build réussi pour ${env.PROJECT_NAME}" :
+                        "❌ Build échoué pour ${env.PROJECT_NAME}"
 
-                    if (currentBuild.currentResult == 'FAILURE') {
-                        slackColor = 'danger'
-                        slackMessage = "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' failed!\n${env.BUILD_URL}"
-                    } else if (currentBuild.currentResult == 'UNSTABLE') {
-                        slackColor = 'warning'
-                        slackMessage = "UNSTABLE: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' is unstable.\n${env.BUILD_URL}"
+                    withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'SLACK_TOKEN')]) {
+                        slackSend(
+                            color: color,
+                            message: """
+                                ${message}
+                                *Projet:* ${env.PROJECT_NAME}
+                                *Version:* ${env.PROJECT_VERSION}
+                                *Build #:* ${env.BUILD_NUMBER}
+                                *Status:* ${buildStatus}
+                                *Job:* ${env.JOB_NAME}
+                                *URL:* ${env.BUILD_URL}
+                            """,
+                            channel: '#tous-ogl',  // Change to your channel name
+                            tokenCredentialId: 'SLACK_AUTH_TOKEN'
+                        )
                     }
-
-                    // Use tokenCredentialId instead of token
-                    slackSend(
-                        channel: '#tous-ogl',
-                        color: slackColor,
-                        tokenCredentialId: 'SLACK_AUTH_TOKEN',  // <-- This must match the Jenkins credential ID
-                        message: slackMessage
-                    )
                 }
             }
         }
