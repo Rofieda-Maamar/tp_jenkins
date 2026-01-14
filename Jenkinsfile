@@ -46,9 +46,9 @@ pipeline {
                 echo '========== Phase Code Analysis =========='
                 echo 'Analyse du code avec SonarQube...'
 
-                withSonarQubeEnv('SonarQube') {
-                bat 'gradlew compileJava sonar'
-                }
+                withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_AUTH_TOKEN')]) {
+                            bat "gradlew compileJava sonar -Dsonar.login=%SONAR_AUTH_TOKEN%"
+                        }
             }
         }
 
