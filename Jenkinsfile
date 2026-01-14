@@ -6,6 +6,8 @@ pipeline {
 
     environment {
         MAVEN_URL = 'https://mymavenrepo.com/repo/cEmjfkxugPlzLxXg1A2B/'
+        PROJECT_NAME = 'TP7-API-INTEGRATION'      // ou le nom exact de ton projet Gradle
+            PROJECT_VERSION = '1.0-SNAPSHOT'
 
     }
 
