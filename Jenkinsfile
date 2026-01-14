@@ -136,14 +136,14 @@ pipeline {
                         color: color,
                         channel: '#tous-ogl',
                         message: """
-                        ${emoji} *Build ${statusText}*
-                        *Projet:* ${env.PROJECT_NAME}
-                        *Version:* ${env.PROJECT_VERSION}
-                        *Build:* #${env.BUILD_NUMBER}
-                        *Status:* ${buildStatus}
-                        *Job:* ${env.JOB_NAME}
-                        *URL:* ${env.BUILD_URL} """.trim(),
-                        tokenCredentialId: 'SLACK_AUTH_TOKEN'
+${emoji} *Build ${statusText}*
+*Projet:* ${env.PROJECT_NAME}
+*Version:* ${env.PROJECT_VERSION}
+*Build:* #${env.BUILD_NUMBER}
+*Status:* ${buildStatus}
+*Job:* ${env.JOB_NAME}
+*URL:* ${env.BUILD_URL}
+                        """.trim()
                     )
                 }
                 echo 'Notification Slack envoyee avec succes'
