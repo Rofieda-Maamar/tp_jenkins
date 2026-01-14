@@ -119,34 +119,171 @@ pipeline {
                 echo "Deploiement reussi sur ${env.MAVEN_URL}"
             }
         }
+    }
 
-        // ============================================
-        // PHASE 6: NOTIFICATION (Slack)
-        // ============================================
-        stage('Notification') {
-            steps {
-                echo '========== Phase Notification =========='
-                script {
-                    def buildStatus = currentBuild.result ?: 'SUCCESS'
-                    def color = buildStatus == 'SUCCESS' ? 'good' : 'danger'
-                    def emoji = buildStatus == 'SUCCESS' ? ':white_check_mark:' : ':x:'
-                    def statusText = buildStatus == 'SUCCESS' ? 'reussi' : 'echoue'
-
-                    slackSend(
-                        color: color,
-                        channel: '#tous-ogl',
-                        message: """
-${emoji} *Build ${statusText}*
-*Projet:* ${env.PROJECT_NAME}
-*Version:* ${env.PROJECT_VERSION}
-*Build:* #${env.BUILD_NUMBER}
-*Status:* ${buildStatus}
-*Job:* ${env.JOB_NAME}
-*URL:* ${env.BUILD_URL}
-                        """.trim()
-                    )
+    // ============================================
+    // POST-BUILD NOTIFICATIONS
+    // ============================================
+    post {
+        success {
+            echo '========== Build Success - Sending Slack Notification =========='
+            script {
+                def payload = """
+                {
+                    "text": ":white_check_mark: *Build reussi*",
+                    "blocks": [
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": ":white_check_mark: *Build reussi*"
+                            }
+                        },
+                        {
+                            "type": "section",
+                            "fields": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*Projet:*\\n${env.PROJECT_NAME}"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*Version:*\\n${env.PROJECT_VERSION}"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*Build:*\\n#${env.BUILD_NUMBER}"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*Status:*\\nSUCCESS"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "*Job:* ${env.JOB_NAME}\\n*URL:* <${env.BUILD_URL}|Voir le build>"
+                            }
+                        }
+                    ]
                 }
-                echo 'Notification Slack envoyee avec succes'
+                """.replaceAll("\\s+", " ").trim()
+
+                withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'WEBHOOK_URL')]) {
+                    bat """
+                        curl -X POST -H "Content-type: application/json" --data "${payload}" %WEBHOOK_URL%
+                    """
+                }
+            }
+        }
+
+        failure {
+            echo '========== Build Failed - Sending Slack Notification =========='
+            script {
+                def payload = """
+                {
+                    "text": ":x: *Build echoue*",
+                    "blocks": [
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": ":x: *Build echoue*"
+                            }
+                        },
+                        {
+                            "type": "section",
+                            "fields": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*Projet:*\\n${env.PROJECT_NAME}"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*Version:*\\n${env.PROJECT_VERSION}"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*Build:*\\n#${env.BUILD_NUMBER}"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*Status:*\\nFAILURE"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "*Job:* ${env.JOB_NAME}\\n*URL:* <${env.BUILD_URL}|Voir le build>"
+                            }
+                        }
+                    ]
+                }
+                """.replaceAll("\\s+", " ").trim()
+
+                withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'WEBHOOK_URL')]) {
+                    bat """
+                        curl -X POST -H "Content-type: application/json" --data "${payload}" %WEBHOOK_URL%
+                    """
+                }
+            }
+        }
+
+        unstable {
+            echo '========== Build Unstable - Sending Slack Notification =========='
+            script {
+                def payload = """
+                {
+                    "text": ":warning: *Build instable*",
+                    "blocks": [
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": ":warning: *Build instable*"
+                            }
+                        },
+                        {
+                            "type": "section",
+                            "fields": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*Projet:*\\n${env.PROJECT_NAME}"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*Version:*\\n${env.PROJECT_VERSION}"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*Build:*\\n#${env.BUILD_NUMBER}"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*Status:*\\nUNSTABLE"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "*Job:* ${env.JOB_NAME}\\n*URL:* <${env.BUILD_URL}|Voir le build>"
+                            }
+                        }
+                    ]
+                }
+                """.replaceAll("\\s+", " ").trim()
+
+                withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'WEBHOOK_URL')]) {
+                    bat """
+                        curl -X POST -H "Content-type: application/json" --data "${payload}" %WEBHOOK_URL%
+                    """
+                }
             }
         }
     }
