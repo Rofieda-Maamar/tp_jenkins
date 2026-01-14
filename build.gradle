@@ -1,73 +1,98 @@
-plugins {
-    id 'java'
-    id 'application'
-    id 'maven-publish'
-    id "org.sonarqube" version "4.3.0.3225" // latest compatible version
+buildscript {
+    repositories {
+        mavenCentral()
+    }
 }
 
-group = 'com.example'
-version = '1.0-SNAPSHOT'
+plugins {
+    id 'java'
+    id 'com.github.spacialcircumstances.gradle-cucumber-reporting' version '0.1.25'
+    id 'jacoco'
+    id 'org.sonarqube' version '5.1.0.4882'  // VERSION MISE À JOUR
+    id 'maven-publish'
+}
 
-// ===== Maven credentials / repo =====
-def mavenUrl = project.findProperty('maven.url') ?: System.getenv('maven.url') ?: System.getenv('MAVEN_URL') ?: System.getenv('url') ?: ''
-def mavenUsername = project.findProperty('maven.username') ?: System.getenv('maven.username') ?: System.getenv('MAVEN_USERNAME') ?: System.getenv('username') ?: ''
-def mavenPassword = project.findProperty('maven.password') ?: System.getenv('maven.password') ?: System.getenv('MAVEN_PASSWORD') ?: System.getenv('password') ?: ''
+group = 'asbar-roufaida'
+version = '1.0-SNAPSHOT'
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
 
 repositories {
     mavenCentral()
+}
 
-    if (mavenUrl) {
-        maven {
-            url = uri(mavenUrl)
-            if (mavenUsername || mavenPassword) {
-                credentials {
-                    username = mavenUsername
-                    password = mavenPassword
-                }
-            }
-        }
+// AJOUT : Configuration pour éviter les erreurs de compilation SonarQube
+tasks.withType(JavaCompile).configureEach {
+    options.debug = true
+}
+
+cucumberReports {
+    outputDir = file('build/reports/cucumber')
+    buildId = '0'
+    reports = files('build/cucumber/cucumber.json')  // matches your runner plugin
+}
+
+
+test {
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+        html.outputLocation = layout.buildDirectory.dir('reports/jacoco')
     }
 }
 
-application {
-    mainClass = 'com.example.Main'
+sonarqube {
+    properties {
+        property "sonar.projectKey", "TP7-API-INTEGRATION"
+        property "sonar.projectName", "TP7-API-INTEGRATION"
+        property "sonar.host.url", "http://localhost:9000/"
+
+        property "sonar.sources", "src/main/java"
+        property "sonar.java.binaries", "build/classes/java/main"
+
+        property "sonar.gradle.skipCompile", "false"
+    }
 }
 
 dependencies {
-    // JUnit
-    testImplementation 'junit:junit:4.13.2'
-
-    // Cucumber
-    testImplementation 'io.cucumber:cucumber-java:7.31.0'
-    testImplementation 'io.cucumber:cucumber-junit:7.31.0'
+    testImplementation 'io.cucumber:cucumber-java:6.0.0'
+    testImplementation 'io.cucumber:cucumber-junit:6.0.0'
+    testImplementation 'junit:junit:4.12'
 }
 
-// ===== Test Phase =====
-test {
-    useJUnit() // JUnit 4
+tasks.named('sonar') {
+    dependsOn test
 }
 
-
-
-// ===== Maven Publishing =====
 publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-            groupId = project.group
-            artifactId = project.name
-            version = project.version
-        }
-    }
     repositories {
-        if (mavenUrl) {
-            maven {
-                url = uri(mavenUrl)
-                credentials {
-                    username = mavenUsername
-                    password = mavenPassword
-                }
+        maven {
+            url System.getenv('MAVEN_REPO_URL') ?: 'https://mymavenrepo.com/repo/cEmjfkxugPlzLxXg1A2B/'
+            credentials {
+                username System.getenv('MAVEN_USERNAME') ?: 'myMavenRepo'
+                password System.getenv('MAVEN_PASSWORD') ?: 'test0005'
             }
         }
     }
+
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
+}
+
+// Tâche pour générer la Javadoc
+task generateJavadoc(type: Javadoc) {
+    source = sourceSets.main.allJava
+    destinationDir = file('build/docs/javadoc')
+    options.encoding = 'UTF-8'
 }

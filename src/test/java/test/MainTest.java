@@ -1,16 +1,17 @@
 package test;
-import org.junit.Ignore;
+
 import io.cucumber.junit.Cucumber;
 import io.cucumber.junit.CucumberOptions;
 import org.junit.runner.RunWith;
 
-@Ignore("Temporarily disabled for CI pipeline validation")
-//@RunWith(Cucumber.class)
+@RunWith(Cucumber.class)
 @CucumberOptions(
-        plugin = {"json:target/cucumber.json" , "html:target/cucumber-html-report"},
-        features = "src/test/resources/features",
-        glue = "test.steps"
+        features = "src/test/resources/features",  // path to your feature files
+        glue = "test.steps",                        // package for step definitions
+        plugin = {
+                "json:build/cucumber/cucumber.json",
+                "html:build/cucumber/html",
+                "junit:build/test-results/test/cucumber.xml"
+        }
 )
-public class MainTest {
-    // No need to extend TestCase
-}
+public class MainTest {}
