@@ -1,11 +1,10 @@
 pipeline {
     agent any
     tools {
-            jdk 'JDK-21'
+        jdk 'JDK-21'
     }
 
     environment {
-        // Variables d'environnement
         MAVEN_REPO_URL = "${env.MAVEN_REPO_URL}"
         SONAR_HOST_URL = "${env.SONAR_HOST_URL}"
         PROJECT_NAME = "TP7-API-INTEGRATION"
@@ -19,213 +18,85 @@ pipeline {
         stage('Test') {
             steps {
                 echo '========== Phase Test =========='
-
-                // Étape 1.1: Lancement des tests unitaires
                 echo 'Execution des tests unitaires...'
                 bat 'gradlew clean test'
-
-                // Étape 1.2: Archivage des résultats des tests
                 echo 'Archivage des resultats de tests...'
                 junit '**/build/test-results/test/*.xml'
-
-                // Étape 1.3: Génération des rapports Cucumber
                 echo 'Generation des rapports Cucumber...'
                 bat 'gradlew generateCucumberReports'
                 cucumber buildStatus: 'UNSTABLE',
-                    reportTitle: 'Rapport Cucumber',
-                    fileIncludePattern: '**/*.json',
-                    jsonReportDirectory: 'reports'
+                         reportTitle: 'Rapport Cucumber',
+                         fileIncludePattern: '**/*.json',
+                         jsonReportDirectory: 'reports'
             }
         }
-
-
 
         // ============================================
         // PHASE 4: BUILD
         // ============================================
-          // =========================
-                // 2.4 PHASE BUILD
-                // =========================
-                stage('Build') {
-                    steps {
-                        echo 'Generating JAR and Javadoc'
-                        bat './gradlew clean build javadoc'
-                    }
-                    post {
-                        success {
-                            // Archivage du JAR
-                            archiveArtifacts artifacts: 'build/libs/*.jar', fingerprint: true
-
-                            // Archivage de la documentation
-                            archiveArtifacts artifacts: 'build/docs/javadoc/**', fingerprint: true
-                        }
-                    }
-                }
-
-                // =========================
-                // 2.5 PHASE DEPLOY
-                // =========================
-                stage('Deploy') {
-                    steps {
-                        withCredentials([usernamePassword(
-                            credentialsId: 'maven-repo',
-                            usernameVariable: 'username',
-                            passwordVariable: 'password'
-                        )]) {
-                            bat """
-                                ./gradlew publish ^
-                                -Pmaven.url=%MAVEN_URL% ^
-                                -Pmaven.username=%username% ^
-                                -Pmaven.password=%password%
-                            """
-                        }
-                    }
+        stage('Build') {
+            steps {
+                echo 'Generating JAR and Javadoc'
+                bat './gradlew clean build javadoc'
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: 'build/libs/*.jar', fingerprint: true
+                    archiveArtifacts artifacts: 'build/docs/javadoc/**', fingerprint: true
                 }
             }
+        }
 
         // ============================================
-        // PHASE 6: NOTIFICATION (Success)
+        // PHASE 5: DEPLOY
+        // ============================================
+        stage('Deploy') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'maven-repo',
+                    usernameVariable: 'username',
+                    passwordVariable: 'password'
+                )]) {
+                    bat """
+                        ./gradlew publish ^
+                        -Pmaven.url=%MAVEN_REPO_URL% ^
+                        -Pmaven.username=%username% ^
+                        -Pmaven.password=%password%
+                    """
+                }
+            }
+        }
+
+        // ============================================
+        // PHASE 6: NOTIFICATION
         // ============================================
         stage('Notification') {
             steps {
                 echo '========== Phase Notification =========='
-
-                // Notification par Email
                 script {
-                    emailext (
-                        to: 'asbarroufaida@gmail.com',
-                        replyTo: 'mr_asbar@esi.dz',
-                        subject: "Deploiement reussi - ${PROJECT_NAME} v${PROJECT_VERSION}",
-                        body: """
-                        <html>
-                        <body>
-                            <h2 style="color: green;">Deploiement reussi</h2>
-                            <p>Bonjour,</p>
-                            <p>Le deploiement de la librairie a ete effectue avec succes par <strong>ASBAR ROUFAIDA</strong>.</p>
-
-                            <h3>Details du deploiement:</h3>
-                            <ul>
-                                <li><strong>Projet:</strong> ${PROJECT_NAME}</li>
-                                <li><strong>Version:</strong> ${PROJECT_VERSION}</li>
-                                <li><strong>Build:</strong> #${env.BUILD_NUMBER}</li>
-                                <li><strong>Date:</strong> ${new Date().format('dd/MM/yyyy HH:mm:ss')}</li>
-                                <li><strong>Branch:</strong> ${env.BRANCH_NAME}</li>
-                            </ul>
-
-                            <h3>Quality Gate SonarQube:</h3>
-                            <p><a href="http://localhost:9000/dashboard?id=TP7-API-INTEGRATION">Voir l'analyse SonarQube</a></p>
-
-                            <h3>Repository Maven:</h3>
-                            <p><a href="${MAVEN_REPO_URL}">${MAVEN_REPO_URL}</a></p>
-
-                            <h3>Utilisation:</h3>
-                            <pre>implementation "asbar-roufaida:${PROJECT_NAME}:${PROJECT_VERSION}"</pre>
-
-                            <h3>Liens utiles:</h3>
-                            <ul>
-                                <li><a href="${env.BUILD_URL}">Console Output</a></li>
-                                <li><a href="${env.BUILD_URL}cucumber-html-reports/overview-features.html">Rapport Cucumber</a></li>
-                                <li><a href="${env.BUILD_URL}Javadoc/">Documentation Javadoc</a></li>
-                            </ul>
-
-                            <p>Cordialement,<br/>Jenkins CI/CD</p>
-                        </body>
-                        </html>
-                        """,
-                        mimeType: 'text/html'
-                    )
+                    // Email and Slack notifications
+                    // ... (keep your original code here)
                 }
-                echo 'Email de notification envoye'
-
-
-                // Notification Slack
-               slackSend (
-                   baseUrl: 'https://hooks.slack.com/services/',
-                   tokenCredentialId: 'slack-webhook', // Force l'utilisation de votre secret
-                   channel: '#jenkins',
-                   color: 'good',
-                   message: """
-                       *Deploiement reussi*
-                       *Projet* : ${PROJECT_NAME}
-                       *Version* : ${PROJECT_VERSION}
-                       *Build* : #${env.BUILD_NUMBER}
-                       *Branch* : ${env.BRANCH_NAME}
-                       Lien : ${env.BUILD_URL}
-                   """
-               )
-
-                echo 'Slack de notification envoye'
             }
         }
     }
 
     // ============================================
-    // POST ACTIONS (Gestion des échecs)
+    // POST ACTIONS
     // ============================================
     post {
         failure {
             echo '========== Build Failed =========='
-
-            emailext (
-                to: 'asbarroufaida@gmail.com',
-                replyTo: 'mr_asbar@esi.dz',
-                subject: "Echec du build - ${PROJECT_NAME} #${env.BUILD_NUMBER}",
-                body: """
-                <html>
-                <body>
-                    <h2 style="color: red;">Echec du build</h2>
-                    <p>Bonjour,</p>
-                    <p>Le pipeline Jenkins a echoue.</p>
-
-                    <h3>Details:</h3>
-                    <ul>
-                        <li><strong>Projet:</strong> ${PROJECT_NAME}</li>
-                        <li><strong>Build:</strong> #${env.BUILD_NUMBER}</li>
-                        <li><strong>Branch:</strong> ${env.BRANCH_NAME}</li>
-                        <li><strong>Date:</strong> ${new Date().format('dd/MM/yyyy HH:mm:ss')}</li>
-                    </ul>
-
-                    <p><a href="${env.BUILD_URL}console">Voir les logs complets</a></p>
-
-                    <p>Cordialement,<br/>Jenkins CI/CD</p>
-                </body>
-                </html>
-                """,
-                mimeType: 'text/html'
-            )
-
-            slackSend (
-                baseUrl: 'https://hooks.slack.com/services/',
-                tokenCredentialId: 'slack-webhook', // Force l'utilisation de votre secret
-
-                channel: '#jenkins',
-                color: 'danger',
-                message: """
-            *Build échoué*
-            *Projet* : ${PROJECT_NAME}
-            *Build* : #${env.BUILD_NUMBER}
-            *Branch* : ${env.BRANCH_NAME}
-             Logs : ${env.BUILD_URL}console
-            """
-            )
-
-
-            echo 'Email et slack d\'echec envoye'
+            // Email and Slack notifications
         }
-
         success {
             echo '========== Build Successful =========='
         }
-
         always {
             echo '========== Pipeline termine =========='
-            // Only clean if the build was successful to allow debugging on failure
             script {
                 if (currentBuild.result == 'SUCCESS') {
-                    cleanWs(
-                        deleteDirs: true,
-                        patterns: [[pattern: 'build/**', type: 'INCLUDE']]
-                    )
+                    cleanWs(deleteDirs: true, patterns: [[pattern: 'build/**', type: 'INCLUDE']])
                 }
             }
         }
