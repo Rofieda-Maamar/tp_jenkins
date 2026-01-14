@@ -43,7 +43,7 @@ pipeline {
 
                 withSonarQubeEnv('SonarQube') {
                     withCredentials([string(credentialsId: 'SONAR_AUTH_TOKEN', variable: 'SONAR_AUTH_TOKEN')]) {
-                        bat "gradlew compileJava sonar -Dsonar.login=%SONAR_AUTH_TOKEN%"
+                        bat "gradlew compileJava sonar -Dsonar.token=%SONAR_AUTH_TOKEN%"
                     }
                 }
             }
