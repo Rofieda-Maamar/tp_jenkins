@@ -7,7 +7,7 @@ import org.junit.runner.RunWith;
 @Ignore("Temporarily disabled for CI pipeline validation")
 //@RunWith(Cucumber.class)
 @CucumberOptions(
-        plugin = {"json:target/cucumber.json"},
+        plugin = {"json:target/cucumber.json" , "html:target/cucumber-html-report"},
         features = "src/test/resources/features",
         glue = "test.steps"
 )

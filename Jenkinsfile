@@ -14,56 +14,23 @@ pipeline {
 
         // =========================
         // 2.1 PHASE TEST
-
-        stages {
-            // =========================
-            // 2.1 PHASE TEST
-            // =========================
-            stage('Test') {
-                steps {
-                    echo 'Running unit tests'
-                    bat './gradlew test'
-
-                    echo 'Running Cucumber tests'
-                    bat './gradlew cucumber'
-                }
-                post {
-                    always {
-                        echo 'Archiving test results'
-                        // Archive JUnit test results
-                        junit testResults: 'build/test-results/test/TEST-*.xml', allowEmptyResults: true
-
-                        // Archive Cucumber test results
-                        junit testResults: 'build/test-results/cucumber/TEST-*.xml', allowEmptyResults: true
-
-                        echo 'Publishing test reports'
-                        // Publish HTML test reports
-                        publishHTML([
-                            allowMissing: false,
-                            alwaysLinkToLastBuild: true,
-                            keepAll: true,
-                            reportDir: 'build/reports/tests/test',
-                            reportFiles: 'index.html',
-                            reportName: 'Unit Test Report'
-                        ])
-
-                        publishHTML([
-                            allowMissing: true,
-                            alwaysLinkToLastBuild: true,
-                            keepAll: true,
-                            reportDir: 'build/reports/cucumber',
-                            reportFiles: 'index.html',
-                            reportName: 'Cucumber Test Report'
-                        ])
-                    }
-                    failure {
-                        echo 'Tests failed, but continuing to archive results'
-                    }
-                }
+        stage('Test') {
+            steps {
+                echo 'Running unit tests'
+                bat './gradlew clean test'
             }
 
-            // Your existing Build stage follows here...
+            post {
+                always {
+                    // Archive JUnit results
+                    junit 'build/test-results/test/*.xml'
+
+                    // Archive Cucumber report
+                    archiveArtifacts artifacts: 'target/**', fingerprint: true
+                }
+            }
         }
+
 
         // =========================
         // 2.4 PHASE BUILD
