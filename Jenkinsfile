@@ -111,21 +111,21 @@ pipeline {
         // PHASE 5: DEPLOY (MyMavenRepo)
         // ============================================
         stage('Deploy') {
-            steps {
-                echo '========== Phase Deploy =========='
-                echo 'Deploiement sur MyMavenRepo...'
-
-                withCredentials([usernamePassword(
-                    credentialsId: 'maven-repo',
-                    usernameVariable: 'username',
-                    passwordVariable: 'password'
-                )]) {
-                    bat 'gradlew publish'
-                }
-
-                echo "Deploiement reussi sur ${MAVEN_REPO_URL}"
+          steps {
+            echo '========== Phase Deploy =========='
+            withCredentials([usernamePassword(credentialsId: 'maven-repo', usernameVariable: 'MAVEN_USERNAME', passwordVariable: 'MAVEN_PASSWORD')]) {
+              // Passe l'URL et les creds comme propriétés Gradle pour être sûrs que build.gradle les lise
+              bat """
+                gradlew publish ^
+                  -Pmaven.url=%MAVEN_URL% ^
+                  -Pmaven.username=%MAVEN_USERNAME% ^
+                  -Pmaven.password=%MAVEN_PASSWORD%
+              """
             }
+            echo "Deploiement reussi sur ${env.MAVEN_URL}"
+          }
         }
+
 
         // ============================================
         // PHASE 6: NOTIFICATION (Success)

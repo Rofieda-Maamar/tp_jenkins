@@ -72,13 +72,22 @@ tasks.named('sonar') {
     dependsOn test
 }
 
+// en haut du build.gradle (définir de façon cohérente)
+def mavenRepoUrl = project.findProperty('maven.url') ?: System.getenv('MAVEN_URL') ?: System.getenv('MAVEN_REPO_URL') ?: 'https://mymavenrepo.com/repo/cEmjfkxugPlzLxXg1A2B/'
+
+def mavenUsername = project.findProperty('maven.username') ?: System.getenv('MAVEN_USERNAME') ?: System.getenv('username') ?: ''
+def mavenPassword = project.findProperty('maven.password') ?: System.getenv('MAVEN_PASSWORD') ?: System.getenv('password') ?: ''
+
 publishing {
     repositories {
-        maven {
-            url System.getenv('MAVEN_REPO_URL') ?: 'https://mymavenrepo.com/repo/cEmjfkxugPlzLxXg1A2B/'
-            credentials {
-                username System.getenv('username') ?: 'myMavenRepo'
-                password System.getenv('password') ?: 'test0005'
+        if (mavenRepoUrl) {
+            maven {
+                name = "maven"
+                url = uri(mavenRepoUrl)               // <-- use uri() to force HTTP(S) format
+                credentials {
+                    username = mavenUsername
+                    password = mavenPassword
+                }
             }
         }
     }
@@ -86,9 +95,13 @@ publishing {
     publications {
         maven(MavenPublication) {
             from components.java
+            groupId = project.group
+            artifactId = project.name
+            version = project.version
         }
     }
 }
+
 
 // Tâche pour générer la Javadoc
 task generateJavadoc(type: Javadoc) {
