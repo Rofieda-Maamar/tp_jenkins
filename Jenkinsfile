@@ -5,11 +5,8 @@ pipeline {
     }
 
     environment {
-        // Variables d'environnement
-        MAVEN_REPO_URL = "${env.MAVEN_REPO_URL}"
-        SONAR_HOST_URL = "${env.SONAR_HOST_URL}"
-        PROJECT_NAME = "TP7-API-INTEGRATION"
-        PROJECT_VERSION = "1.0-SNAPSHOT"
+        MAVEN_URL = 'https://mymavenrepo.com/repo/cEmjfkxugPlzLxXg1A2B/'
+
     }
 
     stages {

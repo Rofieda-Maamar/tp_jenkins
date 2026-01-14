@@ -77,8 +77,8 @@ publishing {
         maven {
             url System.getenv('MAVEN_REPO_URL') ?: 'https://mymavenrepo.com/repo/cEmjfkxugPlzLxXg1A2B/'
             credentials {
-                username System.getenv('MAVEN_USERNAME') ?: 'myMavenRepo'
-                password System.getenv('MAVEN_PASSWORD') ?: 'test0005'
+                username System.getenv('username') ?: 'myMavenRepo'
+                password System.getenv('password') ?: 'test0005'
             }
         }
     }
