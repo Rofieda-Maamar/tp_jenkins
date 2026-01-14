@@ -119,42 +119,25 @@ pipeline {
                 echo "Deploiement reussi sur ${env.MAVEN_URL}"
             }
         }
-    }
 
-    // ============================================
-    // POST-BUILD ACTIONS
-    // ============================================
-    post {
-        success {
-            echo '========== Build Success - Sending Slack Notification =========='
-            script {
-                def message = ":white_check_mark: *Build réussi*\\n*Projet:* ${env.PROJECT_NAME}\\n*Version:* ${env.PROJECT_VERSION}\\n*Build:* #${env.BUILD_NUMBER}\\n*Job:* ${env.JOB_NAME}\\n*URL:* ${env.BUILD_URL}"
+        // ============================================
+        // PHASE 6: NOTIFICATION (Slack)
+        // ============================================
+        stage('Notification') {
+            steps {
+                echo '========== Phase Notification =========='
+                script {
+                    def buildStatus = currentBuild.result ?: 'SUCCESS'
+                    def emoji = buildStatus == 'SUCCESS' ? ':white_check_mark:' : ':x:'
+                    def statusText = buildStatus == 'SUCCESS' ? 'réussi' : 'échoué'
 
-                withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'WEBHOOK_URL')]) {
-                    bat "curl -X POST -H \"Content-type: application/json\" --data \"{\\\"text\\\":\\\"${message}\\\"}\" %WEBHOOK_URL%"
+                    def message = "${emoji} *Build ${statusText}*\\n*Projet:* ${env.PROJECT_NAME}\\n*Version:* ${env.PROJECT_VERSION}\\n*Build:* #${env.BUILD_NUMBER}\\n*Job:* ${env.JOB_NAME}\\n*URL:* ${env.BUILD_URL}"
+
+                    withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'WEBHOOK_URL')]) {
+                        bat "curl -X POST -H \"Content-type: application/json\" --data \"{\\\"text\\\":\\\"${message}\\\"}\" %WEBHOOK_URL%"
+                    }
                 }
-            }
-        }
-
-        failure {
-            echo '========== Build Failed - Sending Slack Notification =========='
-            script {
-                def message = ":x: *Build échoué*\\n*Projet:* ${env.PROJECT_NAME}\\n*Version:* ${env.PROJECT_VERSION}\\n*Build:* #${env.BUILD_NUMBER}\\n*Job:* ${env.JOB_NAME}\\n*URL:* ${env.BUILD_URL}"
-
-                withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'WEBHOOK_URL')]) {
-                    bat "curl -X POST -H \"Content-type: application/json\" --data \"{\\\"text\\\":\\\"${message}\\\"}\" %WEBHOOK_URL%"
-                }
-            }
-        }
-
-        unstable {
-            echo '========== Build Unstable - Sending Slack Notification =========='
-            script {
-                def message = ":warning: *Build instable*\\n*Projet:* ${env.PROJECT_NAME}\\n*Version:* ${env.PROJECT_VERSION}\\n*Build:* #${env.BUILD_NUMBER}\\n*Job:* ${env.JOB_NAME}\\n*URL:* ${env.BUILD_URL}"
-
-                withCredentials([string(credentialsId: 'SLACK_AUTH_TOKEN', variable: 'WEBHOOK_URL')]) {
-                    bat "curl -X POST -H \"Content-type: application/json\" --data \"{\\\"text\\\":\\\"${message}\\\"}\" %WEBHOOK_URL%"
-                }
+                echo 'Notification Slack envoyée avec succès'
             }
         }
     }
